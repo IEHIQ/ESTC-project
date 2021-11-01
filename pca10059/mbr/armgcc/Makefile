@@ -2,7 +2,7 @@ PROJECT_NAME     := blinky_pca10059_mbr
 TARGETS          := nrf52840_xxaa
 OUTPUT_DIRECTORY := _build
 
-SDK_ROOT := /home/iehiq/estc-nsdk/ESTC-NSDK
+SDK_ROOT ?= /opt/ESTC-NSDK
 PROJ_DIR := ../../..
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
