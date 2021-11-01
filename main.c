@@ -61,13 +61,18 @@ int main(void)
     /* Configure board. */
     bsp_board_init(BSP_INIT_LEDS);
 
+    /* My board ID is #6587*/
+    const char blink_counts[4] = {6, 5, 8, 7};
+
     /* Toggle LEDs. */
     while (true)
     {
         for (int i = 0; i < LEDS_NUMBER; i++)
         {
-            bsp_board_led_invert(i);
-            nrf_delay_ms(500);
+            for (int j = 0; j < blink_counts[i]*2; j++) {
+                bsp_board_led_invert(i);
+                nrf_delay_ms(500);
+            }
         }
     }
 }
