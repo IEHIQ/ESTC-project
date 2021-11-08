@@ -122,7 +122,7 @@ int main(void)
     /* Configure LEDs. */
     uint32_t leds[LEDS_COUNT];
     init_leds(leds);
-    unsigned char current_led = 0;
+    char current_led = 0;
 
     /* My board ID is #6587. */
     const char blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
