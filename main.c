@@ -55,15 +55,30 @@
 
 #define LEDS_COUNT 4
 
+/**
+ * @brief Struct for storing LED port and pin values
+ */
+typedef struct 
+{
+    uint32_t port;
+    uint32_t pin;
+} LED;
 
 /**
  * @brief Procedure for initialization an array with LED pin numbers
  */
 void init_leds(uint32_t *leds) {
-    const uint32_t pins_n_ports[] = {0, 6, 0, 8, 1, 9, 0, 12};
+    const LED pins_n_ports[] = 
+    {
+        {0, 6},
+        {0, 8},
+        {1, 9}, 
+        {0, 12}
+    };
     
-    for (int i = 0; i < LEDS_COUNT; i++) {
-        leds[i] = NRF_GPIO_PIN_MAP(pins_n_ports[2 * i], pins_n_ports[2 * i + 1]);
+    for (int i = 0; i < LEDS_COUNT; i++) 
+    {
+        leds[i] = NRF_GPIO_PIN_MAP(pins_n_ports[i].port, pins_n_ports[i].pin);
         nrf_gpio_cfg_output(leds[i]);
         nrf_gpio_pin_write(leds[i], 1);
     } 
