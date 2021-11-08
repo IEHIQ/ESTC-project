@@ -53,24 +53,64 @@
 #include "nrf_delay.h"
 #include "boards.h"
 
+#define LEDS_COUNT 4
+
+/**
+ * @brief Struct for storing LED port and pin values
+ */
+typedef struct 
+{
+    uint32_t port;
+    uint32_t pin;
+} LED;
+
+/**
+ * @brief Procedure for initialization an array with LED pin numbers
+ */
+void init_leds(uint32_t *leds) {
+    const LED pins_n_ports[] = 
+    {
+        {0, 6},
+        {0, 8},
+        {1, 9}, 
+        {0, 12}
+    };
+    
+    for (int i = 0; i < LEDS_COUNT; i++) 
+    {
+        leds[i] = NRF_GPIO_PIN_MAP(pins_n_ports[i].port, pins_n_ports[i].pin);
+        nrf_gpio_cfg_output(leds[i]);
+        nrf_gpio_pin_write(leds[i], 1);
+    } 
+}
+
+/**
+ * @brief Procedure-wrapper for toggling LEDs
+ */
+void toggle_led(uint32_t *led) {
+    nrf_gpio_pin_toggle(*led);
+}
+
 /**
  * @brief Function for application main entry.
  */
 int main(void)
 {
-    /* Configure board. */
-    bsp_board_init(BSP_INIT_LEDS);
+    /* Configure LEDs. */
+    uint32_t leds[LEDS_COUNT];
+    init_leds(leds);
 
     /* My board ID is #6587*/
-    const char blink_counts[4] = {6, 5, 8, 7};
+    const char blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
+    
 
     /* Toggle LEDs. */
     while (true)
     {
-        for (int i = 0; i < LEDS_NUMBER; i++)
+        for (int i = 0; i < LEDS_COUNT; i++)
         {
             for (int j = 0; j < blink_counts[i]*2; j++) {
-                bsp_board_led_invert(i);
+                toggle_led(&leds[i]);
                 nrf_delay_ms(500);
             }
         }
@@ -80,3 +120,4 @@ int main(void)
 /**
  *@}
  **/
+
