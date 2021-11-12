@@ -52,8 +52,10 @@
 #include <stdint.h>
 #include "nrf_delay.h"
 #include "boards.h"
+#include "nrf_gpio.h"
 
 #define LEDS_COUNT 4
+#define BLINK_DELAY 500
 
 /**
  * @brief Struct for storing LED port and pin values
@@ -64,10 +66,12 @@ typedef struct
     uint32_t pin;
 } LED;
 
+
 /**
  * @brief Procedure for initialization an array with LED pin numbers
  */
-void init_leds(uint32_t *leds) {
+void init_leds(uint32_t *leds) 
+{
     const LED pins_n_ports[] = 
     {
         {0, 6},
@@ -87,8 +91,18 @@ void init_leds(uint32_t *leds) {
 /**
  * @brief Procedure-wrapper for toggling LEDs
  */
-void toggle_led(uint32_t *led) {
+void toggle_led(uint32_t *led) 
+{
     nrf_gpio_pin_toggle(*led);
+}
+
+/**
+ * @brief Procedure for initialization button pin number
+ */
+void init_button(uint32_t *button) 
+{
+    *button = NRF_GPIO_PIN_MAP(1, 6);
+    nrf_gpio_cfg_input(*button, NRF_GPIO_PIN_PULLUP);
 }
 
 /**
@@ -96,28 +110,54 @@ void toggle_led(uint32_t *led) {
  */
 int main(void)
 {
+    /* Variable for counting LED blinking delay when button is pressed. */
+    unsigned short counter_ms = 0;
+    /* Variable for storing the rest of LED blinking delay after button was released. */
+    unsigned short left_ms = 0;
+
+    /* Configure button. */
+    uint32_t button;
+    init_button(&button);
+
     /* Configure LEDs. */
     uint32_t leds[LEDS_COUNT];
     init_leds(leds);
+    char current_led = 0;
 
-    /* My board ID is #6587*/
+    /* My board ID is #6587. */
     const char blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
-    
+    char blinks_left = blink_counts[current_led] * 2;
 
-    /* Toggle LEDs. */
+    /* Toggle LEDs when button is pressed. */
     while (true)
     {
-        for (int i = 0; i < LEDS_COUNT; i++)
+        if (!nrf_gpio_pin_read(button)) 
         {
-            for (int j = 0; j < blink_counts[i]*2; j++) {
-                toggle_led(&leds[i]);
-                nrf_delay_ms(500);
+            if (counter_ms >= BLINK_DELAY - left_ms) 
+            {
+                left_ms = 0;
+                counter_ms = 0;
+                toggle_led(&leds[current_led]);
+                blinks_left -= 1;
+                if (blinks_left == 0) 
+                {
+                    current_led = (current_led + 1) % LEDS_COUNT;
+                    blinks_left = blink_counts[current_led] * 2;
+                }
             }
+
+            nrf_delay_ms(1);
+            counter_ms += 1;
+        }
+        else 
+        {
+            if (left_ms != counter_ms)
+                left_ms = counter_ms;
         }
     }
+    
 }
 
 /**
  *@}
  **/
-
