@@ -50,12 +50,35 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "nrf_delay.h"
-#include "boards.h"
 #include "nrf_gpio.h"
+
+#include "nordic_common.h"
+#include "boards.h"
+
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
+#include "nrf_log_backend_usb.h"
+
+#include "app_usbd.h"
+#include "app_usbd_serial_num.h"
+
 
 #define LEDS_COUNT 4
 #define BLINK_DELAY 500
+
+/**
+ * @brief Procedure for logs initialization.
+ */
+void logs_init()
+{
+    ret_code_t ret = NRF_LOG_INIT(NULL);
+    APP_ERROR_CHECK(ret);
+    NRF_LOG_DEFAULT_BACKENDS_INIT();
+}
 
 /**
  * @brief Struct for storing LED port and pin values
@@ -110,6 +133,10 @@ void init_button(uint32_t *button)
  */
 int main(void)
 {
+    /* Starting logs. */
+    logs_init();
+    NRF_LOG_INFO("Starting up the LED blinking project with USB logging.");
+
     /* Variable for counting LED blinking delay when button is pressed. */
     unsigned short counter_ms = 0;
     /* Variable for storing the rest of LED blinking delay after button was released. */
@@ -122,15 +149,18 @@ int main(void)
     /* Configure LEDs. */
     uint32_t leds[LEDS_COUNT];
     init_leds(leds);
-    char current_led = 0;
+    uint8_t current_led = 0;
+    
 
     /* My board ID is #6587. */
-    const char blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
-    char blinks_left = blink_counts[current_led] * 2;
+    const uint8_t blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
+    uint8_t blinks_left = blink_counts[current_led] * 2;
 
     /* Toggle LEDs when button is pressed. */
     while (true)
     {
+        NRF_LOG_INFO("Millisecond counter : %d", counter_ms);
+
         if (!nrf_gpio_pin_read(button)) 
         {
             if (counter_ms >= BLINK_DELAY - left_ms) 
@@ -154,6 +184,9 @@ int main(void)
             if (left_ms != counter_ms)
                 left_ms = counter_ms;
         }
+
+        LOG_BACKEND_USB_PROCESS();
+        NRF_LOG_PROCESS();
     }
     
 }
