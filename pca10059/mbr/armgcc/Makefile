@@ -48,6 +48,8 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/atomic_fifo/nrf_atfifo.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_power.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power.c \
+  \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_systick.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
