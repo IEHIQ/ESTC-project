@@ -186,28 +186,34 @@ int main(void)
     /* Array with t_on, and t_off values in microseconds for current DC state. */
     int32_t DC_times[2] = {PWM_step * current_DC, PWM_step * (100 - current_DC)};
     /* Current DC time index (t_on or t_off). */
-    bool DC_times_index = false;
+    size_t DC_times_index = 0;
 
     /* Timestamp of last DC value change. */
     int32_t last_DC_change_time = BLINK_DELAY_MCS;
-    /* Timestamp of last LED state change. */
-    int32_t last_LED_change_time = BLINK_DELAY_MCS;
 
     /* Toggle LEDs when button is pressed. */
     while (true)
     {
-        if (!nrf_gpio_pin_read(button)) 
+        if (nrfx_systick_test(&time_state, 1))
         {
-            if (nrfx_systick_test(&time_state, 1))
+            nrfx_systick_get(&time_state);
+            mcs_counter_static++;
+
+            if (mcs_counter_static >= DC_times[DC_times_index])
             {
-                nrfx_systick_get(&time_state);
+                mcs_counter_static = 0;
+                LED_toggle(&LEDs[current_LED]);
+                DC_times_index = ~DC_times_index & 1;
+            }
+
+            if (!nrf_gpio_pin_read(button)) 
+            {
                 mcs_counter--;
 
                 if (mcs_counter <= 0)
                 {
                     //NRF_LOG_INFO("Counter zeroed.");
                     last_DC_change_time = BLINK_DELAY_MCS;
-                    last_LED_change_time = BLINK_DELAY_MCS;
                     mcs_counter = BLINK_DELAY_MCS;
 
                     DC_delta *= -1;
@@ -218,14 +224,6 @@ int main(void)
                         current_LED = (current_LED + 1) % LEDS_COUNT;
                         blinks_left = blink_counts[current_LED] * 2;
                     }
-                }
-
-                if (mcs_counter <= last_LED_change_time - DC_times[DC_times_index])
-                {
-                    //NRF_LOG_INFO("LED blinked.");
-                    last_LED_change_time = mcs_counter;
-                    LED_toggle(&LEDs[current_LED]);
-                    DC_times_index = !DC_times_index;
                 }
 
                 if (mcs_counter <= last_DC_change_time - PWM_delay)
@@ -240,26 +238,10 @@ int main(void)
                 }
             }
         }
-        else
-        {
-            if (nrfx_systick_test(&time_state, 1))
-            {
-                nrfx_systick_get(&time_state);
-                mcs_counter_static++;
-
-                if (mcs_counter_static >= DC_times[DC_times_index])
-                {
-                    mcs_counter_static = 0;
-                    LED_toggle(&LEDs[current_LED]);
-                    DC_times_index = !DC_times_index;
-                }
-            }
-        }
 
         LOG_BACKEND_USB_PROCESS();
         NRF_LOG_PROCESS();
     }
-    
 }
 
 /**
