@@ -130,36 +130,39 @@ void LED_toggle(uint32_t *led)
 }
 
 /* The time remaining until the next click for double-click to get detected. */
-uint32_t dclick_time_left = 0;
+uint32_t mcs_dclick_time_left = 0;
 /* Current state of LEDs behaviour. */
 bool is_blinking = 0;
 
 /* Double click event handler. */
 void dclick(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action) 
 {
-    if (dclick_time_left > 0)
+    if (mcs_dclick_time_left > 0)
     {
         //NRF_LOG_INFO("Double click!");
         is_blinking = !is_blinking;
-        dclick_time_left = 0;
+        mcs_dclick_time_left = 0;
     }
     else
-        dclick_time_left = DOUBLE_CLICK_DELAY;
+        mcs_dclick_time_left = DOUBLE_CLICK_DELAY;
 }
 
 /**
  * @brief Procedure for initialization button pin number and GPIOTE
  */
-void button_init(uint32_t *button, nrfx_gpiote_in_config_t *button_config) 
+void button_init() 
 {
-    *button = NRF_GPIO_PIN_MAP(1, 6);
-    nrf_gpio_cfg_input(*button, NRF_GPIO_PIN_PULLUP);
+    nrfx_gpiote_init();
+    uint32_t button;
+    button = NRF_GPIO_PIN_MAP(1, 6);
+    nrf_gpio_cfg_input(button, NRF_GPIO_PIN_PULLUP);
 
-    button_config->sense = NRF_GPIOTE_POLARITY_LOTOHI;
-    button_config->pull = NRF_GPIO_PIN_PULLUP;
+    nrfx_gpiote_in_config_t button_config;
+    button_config.sense = NRF_GPIOTE_POLARITY_LOTOHI;
+    button_config.pull = NRF_GPIO_PIN_PULLUP;
 
-    nrfx_gpiote_in_init(*button, &*button_config, dclick);
-    nrfx_gpiote_in_event_enable(*button, true);
+    nrfx_gpiote_in_init(button, &button_config, dclick);
+    nrfx_gpiote_in_event_enable(button, true);
 }
 
 /**
@@ -178,10 +181,7 @@ int main(void)
     int32_t mcs_counter_static = 0;
 
     /* Configure button. */
-    nrfx_gpiote_init();
-    nrfx_gpiote_in_config_t button_config;
-    uint32_t button;
-    button_init(&button, &button_config);
+    button_init();
 
     /* Configure LEDs. */
     uint32_t LEDs[LEDS_COUNT];
@@ -231,8 +231,8 @@ int main(void)
             nrfx_systick_get(&time_state);
             mcs_counter_static++;
 
-            if (dclick_time_left > 0)
-                dclick_time_left--;
+            if (mcs_dclick_time_left > 0)
+                mcs_dclick_time_left--;
 
             if (mcs_counter_static >= DC_times[DC_times_index])
             {
