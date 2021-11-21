@@ -1,7 +1,4 @@
-#include "nrf_delay.h"
 #include "nrf_gpio.h"
-#include "nrf_gpiote.h"
-#include "nrfx_gpiote.h"
 
 #include "button.h"
 

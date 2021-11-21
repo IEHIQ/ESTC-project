@@ -65,9 +65,6 @@
 
 #include "nrfx_systick.h"
 
-#include "nrf_gpiote.h"
-#include "nrfx_gpiote.h"
-
 #include "LED.h"
 #include "button.h"
 #include "PWM.h"

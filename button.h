@@ -3,6 +3,8 @@
 #pragma once
 
 #include <stdint.h>
+#include "nrf_gpiote.h"
+#include "nrfx_gpiote.h"
 
 #define BUTTON_PORT 1
 #define BUTTON_PIN 6
