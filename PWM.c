@@ -33,7 +33,7 @@ void change_DC(PWM_config *config, int32_t *time)
 
 void PWM_LED_toggle(PWM_config *PWM_config, LEDs_config *LEDs_config)
 {
-    LED_toggle(&(LEDs_config->LEDs[LEDs_config->current_LED]));
+    LED_toggle(&LEDs_config->current_LED);
     toggle_DC_times_index(PWM_config);
 }
 

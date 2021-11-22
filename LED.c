@@ -5,29 +5,28 @@
 
 const uint8_t blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
 
-const LED pins_n_ports[] = 
+const uint32_t LED_gpio_pins[LEDS_COUNT] = 
 {
-    {0, 6},
-    {0, 8},
-    {1, 9}, 
-    {0, 12}
+    NRF_GPIO_PIN_MAP(0, 6),
+    NRF_GPIO_PIN_MAP(0, 8),
+    NRF_GPIO_PIN_MAP(1, 9), 
+    NRF_GPIO_PIN_MAP(0, 12)
 };
 
 void LEDs_init(LEDs_config *config)
 {   
     for (int i = 0; i < LEDS_COUNT; i++) 
     {
-        config->LEDs[i] = NRF_GPIO_PIN_MAP(pins_n_ports[i].port, pins_n_ports[i].pin);
-        nrf_gpio_cfg_output(config->LEDs[i]);
-        nrf_gpio_pin_write(config->LEDs[i], 1);
+        nrf_gpio_cfg_output(LED_gpio_pins[i]);
+        nrf_gpio_pin_write(LED_gpio_pins[i], 1);
     }
     config->current_LED = 0;
     config->blinks_left = blink_counts[config->current_LED] * 2;
 }
 
-void LED_toggle(uint32_t *led) 
+void LED_toggle(uint8_t *LED_num) 
 {
-    nrf_gpio_pin_toggle(*led);
+    nrf_gpio_pin_toggle(LED_gpio_pins[*LED_num]);
 }
 
 void LED_set_blink(LEDs_config *config)

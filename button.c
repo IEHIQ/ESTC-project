@@ -16,7 +16,9 @@ void dclick(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
         mcs_dclick_time_left = 0;
     }
     else
-        mcs_dclick_time_left = DOUBLE_CLICK_DELAY;
+    {
+        mcs_dclick_time_left = DOUBLE_CLICK_DELAY_MCS;
+    }
 }
 
 void button_init() 

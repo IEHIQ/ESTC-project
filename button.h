@@ -8,7 +8,7 @@
 
 #define BUTTON_PORT 1
 #define BUTTON_PIN 6
-#define DOUBLE_CLICK_DELAY 100000
+#define DOUBLE_CLICK_DELAY_MCS 100000
 
 /**
  * @brief Procedure for initialization button pin number and GPIOTE

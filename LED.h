@@ -8,21 +8,13 @@
 #define BLINK_DELAY 500
 #define BLINK_DELAY_MCS 100000
 
-/**
- * @brief Struct for storing LED port and pin values
- */
-typedef struct 
-{
-    uint32_t port;
-    uint32_t pin;
-} LED;
+extern const uint32_t LED_gpio_pins[LEDS_COUNT];
 
 /**
  * @brief Struct for storing LEDs config
  */
 typedef struct 
 {
-    uint32_t LEDs[LEDS_COUNT];
     uint8_t current_LED;
     uint8_t blinks_left;
 } LEDs_config;
@@ -35,7 +27,7 @@ void LEDs_init(LEDs_config *config);
 /**
  * @brief Procedure-wrapper for toggling LEDs
  */
-void LED_toggle(uint32_t *led);
+void LED_toggle(uint8_t *LED_num);
 
 /**
  * @brief Procedure for switching values of a LED config for next blink phase (lighting or fading)
