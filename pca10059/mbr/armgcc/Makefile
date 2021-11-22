@@ -50,6 +50,12 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power.c \
   \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_systick.c \
+  \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
+  \
+  $(PROJ_DIR)/LED.c\
+  $(PROJ_DIR)/button.c\
+  $(PROJ_DIR)/PWM.c\
 
 # Include folders common to all targets
 INC_FOLDERS += \

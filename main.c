@@ -51,8 +51,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nrf_delay.h"
-#include "nrf_gpio.h"
 
 #include "nordic_common.h"
 #include "boards.h"
@@ -60,7 +58,6 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-
 #include "nrf_log_backend_usb.h"
 
 #include "app_usbd.h"
@@ -68,22 +65,14 @@
 
 #include "nrfx_systick.h"
 
+#include "LED.h"
+#include "button.h"
+#include "PWM.h"
 
-#define LEDS_COUNT 4
-#define BLINK_DELAY 500
-
-#define BLINK_DELAY_MCS 500000
-#define PWM_FREQ 1000
-
-/**
- * @brief Struct for storing LED port and pin values
- */
-typedef struct 
-{
-    uint32_t port;
-    uint32_t pin;
-} LED;
-
+/* The time remaining until the next click for double-click to get detected. */
+extern uint32_t mcs_dclick_time_left;
+/* Current state of LEDs behaviour. */
+extern bool is_blinking;
 
 /**
  * @brief Procedure for logs initialization.
@@ -96,102 +85,37 @@ void logs_init()
 }
 
 /**
- * @brief Procedure for initialization an array with LED pin numbers
- */
-void LEDs_init(uint32_t *leds) 
-{
-    const LED pins_n_ports[] = 
-    {
-        {0, 6},
-        {0, 8},
-        {1, 9}, 
-        {0, 12}
-    };
-    
-    for (int i = 0; i < LEDS_COUNT; i++) 
-    {
-        leds[i] = NRF_GPIO_PIN_MAP(pins_n_ports[i].port, pins_n_ports[i].pin);
-        nrf_gpio_cfg_output(leds[i]);
-        nrf_gpio_pin_write(leds[i], 1);
-    } 
-}
-
-/**
- * @brief Procedure-wrapper for toggling LEDs
- */
-void LED_toggle(uint32_t *led) 
-{
-    nrf_gpio_pin_toggle(*led);
-}
-
-/**
- * @brief Procedure for initialization button pin number
- */
-void button_init(uint32_t *button) 
-{
-    *button = NRF_GPIO_PIN_MAP(1, 6);
-    nrf_gpio_cfg_input(*button, NRF_GPIO_PIN_PULLUP);
-}
-
-/**
  * @brief Function for application main entry.
  */
 int main(void)
 {
     /* Starting logs. */
     logs_init();
-    NRF_LOG_INFO("Starting up the LED blinking project with USB logging.");
 
-    /* Variable for counting time button is pressed. */
+    /* Variable for counting time when button is pressed. */
     int32_t mcs_counter = BLINK_DELAY_MCS;
 
     /* Variable for counting time when button is released. */
     int32_t mcs_counter_static = 0;
 
     /* Configure button. */
-    uint32_t button;
-    button_init(&button);
+    button_init();
 
     /* Configure LEDs. */
-    uint32_t LEDs[LEDS_COUNT];
-    LEDs_init(LEDs);
-    uint8_t current_LED = 0;
-    
-    /* My board ID is #6587. */
-    const uint8_t blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
-    uint8_t blinks_left = blink_counts[current_LED] * 2;
+    LEDs_config LEDs_config;
+    LEDs_init(&LEDs_config);
 
+    /* Configure PWM. */
+    PWM_config PWM_config;
+    PWM_init(&PWM_config);
 
     /* Configure timer. */
     nrfx_systick_init();
     nrfx_systick_state_t time_state = {0};
     nrfx_systick_get(&time_state);
 
-    /* DC - duty cycle. */
 
-    /* Time in microseconds during which DC value should not change. */
-    uint32_t PWM_delay = BLINK_DELAY_MCS / 100;
-    /* Current DC value (0-100%). */
-    uint32_t current_DC = 100;
-
-    /* 
-    1% of time of each PWM cycle.
-    (10 000 - 1% of a second in microseconds)
-    */
-    uint32_t PWM_step = 10000 / PWM_FREQ;
-
-    /* The "direction" towards which DC value will change (increment/decrement). */
-    int8_t DC_delta = -1;
-
-    /* Array with t_on, and t_off values in microseconds for current DC state. */
-    int32_t DC_times[2] = {PWM_step * current_DC, PWM_step * (100 - current_DC)};
-    /* Current DC time index (t_on or t_off). */
-    size_t DC_times_index = 0;
-
-    /* Timestamp of last DC value change. */
-    int32_t last_DC_change_time = BLINK_DELAY_MCS;
-
-    /* Toggle LEDs when button is pressed. */
+    /* Toggle LEDs according to current state. */
     while (true)
     {
         if (nrfx_systick_test(&time_state, 1))
@@ -199,42 +123,32 @@ int main(void)
             nrfx_systick_get(&time_state);
             mcs_counter_static++;
 
-            if (mcs_counter_static >= DC_times[DC_times_index])
+            if (mcs_dclick_time_left > 0)
+                mcs_dclick_time_left--;
+
+            if (mcs_counter_static >= get_current_DC_time(&PWM_config))
             {
                 mcs_counter_static = 0;
-                LED_toggle(&LEDs[current_LED]);
-                DC_times_index = ~DC_times_index & 1;
+                PWM_LED_toggle(&PWM_config, &LEDs_config);
             }
 
-            if (!nrf_gpio_pin_read(button)) 
+            if (is_blinking) 
             {
                 mcs_counter--;
 
                 if (mcs_counter <= 0)
                 {
                     //NRF_LOG_INFO("Counter zeroed.");
-                    last_DC_change_time = BLINK_DELAY_MCS;
                     mcs_counter = BLINK_DELAY_MCS;
-
-                    DC_delta *= -1;
-
-                    blinks_left -= 1;
-                    if (blinks_left == 0) 
-                    {
-                        current_LED = (current_LED + 1) % LEDS_COUNT;
-                        blinks_left = blink_counts[current_LED] * 2;
-                    }
+                    PWM_set_blink(&PWM_config);
+                    LED_set_blink(&LEDs_config);
                 }
 
-                if (mcs_counter <= last_DC_change_time - PWM_delay)
+                if (mcs_counter <= PWM_config.last_DC_change_time - PWM_config.PWM_delay)
                 {
                     //NRF_LOG_INFO("DC changed.");
-                    last_DC_change_time = mcs_counter;
-                    current_DC += DC_delta;
-
-                    DC_times[0] = PWM_step * current_DC; 
-                    DC_times[1] = PWM_step * (100 - current_DC);
-                    mcs_counter_static = DC_times[DC_times_index]; 
+                    mcs_counter_static = get_current_DC_time(&PWM_config);
+                    change_DC(&PWM_config, &mcs_counter); 
                 }
             }
         }
