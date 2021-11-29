@@ -33,7 +33,7 @@ static hsb_modifyer apply_hsb_delta;
  */
 void init_leds_config()
 {
-    current_hsb = (HSB){0, 0, 50};
+    current_hsb = (HSB){0, 100, 100};
     current_hsb_delta = (HSB){0, 0 ,0};
 
     current_rgb = (RGB_16){0, 0, 0};
