@@ -7,75 +7,56 @@
 /* Defining button timer */
 APP_TIMER_DEF(btn_timer);
 
-void empty_event() {};
+static uint32_t button_pin;
 
-event on_hold_start = empty_event;
-event on_hold_end = empty_event;
-event on_double_click = empty_event;
+static void empty_event() {};
 
-/* Current state of button. */
-btn_state_t button_state = RELEASED;
+/* Button events */
+static event on_hold_start;
+static event on_hold_end;
+static event on_double_click;
 
 /* Indicates that the next button press will (or will not) be a double click. */
-bool is_double_click = false;
+static bool is_double_click;
 
-/*
-    Indicates that double click was registered
-    in current button press-release cycle.
- */
-bool was_double_click = false;
-
-/* Changes button state. */
-void toggle_button_state()
-{
-    button_state = (button_state + 1) % 2;
-}
-
-void button_timer_handler(void *context)
+static void button_timer_handler(void *context)
 {
     //NRF_LOG_INFO("Handler");
-    *(bool *)context = false;
+    is_double_click = false;
+    if (!nrf_gpio_pin_read(button_pin))
+    {
+        //NRF_LOG_INFO("Holding!");
+        on_hold_start();
+    }
 };
 
-/* Configure button timer. */
-void button_timer_init()
+/**
+ * @brief Configures button timer
+ *
+ */
+static void init_button_timer()
 {
-    app_timer_init();
     app_timer_create(&btn_timer, APP_TIMER_MODE_SINGLE_SHOT, button_timer_handler);
 }
 
 /*
     Button click event.
-    When button gets pressed and double click was not initiated, button holding state begins
-
-    When button gets pressed and double click was initiated (and double click delay still not ended),
-        double click happens
-
-    When button gets released, button holding state ends
-
-    When button gets released and button press
-        that was before this release did not triggered double click,
-        initiates new double click timer delay
 */
-void click(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+static void click(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
-    toggle_button_state();
-
-    if (button_state == PRESSED)
+    if (!nrf_gpio_pin_read(button_pin))
     {
         //NRF_LOG_INFO("Pressed!");
-
         if (!is_double_click)
         {
-            //NRF_LOG_INFO("Holding!");
-            on_hold_start();
+            is_double_click = true;
+            app_timer_start(btn_timer, DOUBLE_CLICK_DELAY_TICKS, NULL);
         }
         else
         {
             //NRF_LOG_INFO("Double click!");
-            on_double_click();
-            was_double_click = true;
             is_double_click = false;
+            on_double_click();
             app_timer_stop(btn_timer);
         }
     }
@@ -83,26 +64,39 @@ void click(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
     {
         //NRF_LOG_INFO("Released!");
         on_hold_end();
-        if (!was_double_click)
-        {
-            is_double_click = true;
-            app_timer_start(btn_timer, DOUBLE_CLICK_DELAY_TICKS, &is_double_click);
-        }
-        was_double_click = false;
     }
 }
 
-void button_init()
+void init_button()
 {
+    on_hold_start = empty_event;
+    on_hold_end = empty_event;
+    on_double_click = empty_event;
+    is_double_click = false;
+
     nrfx_gpiote_init();
-    button_timer_init();
-    uint32_t button;
-    button = NRF_GPIO_PIN_MAP(1, 6);
-    nrf_gpio_cfg_input(button, NRF_GPIO_PIN_PULLUP);
+    init_button_timer();
+    button_pin = NRF_GPIO_PIN_MAP(1, 6);
+    nrf_gpio_cfg_input(button_pin, NRF_GPIO_PIN_PULLUP);
 
     nrfx_gpiote_in_config_t button_config = NRFX_GPIOTE_CONFIG_IN_SENSE_TOGGLE(true);
     button_config.pull = NRF_GPIO_PIN_PULLUP;
 
-    nrfx_gpiote_in_init(button, &button_config, click);
-    nrfx_gpiote_in_event_enable(button, true);
+    nrfx_gpiote_in_init(button_pin, &button_config, click);
+    nrfx_gpiote_in_event_enable(button_pin, true);
+}
+
+void set_hold_start_event(event hold_start_event)
+{
+    on_hold_start = hold_start_event;
+}
+
+void set_hold_end_event(event hold_end_event)
+{
+    on_hold_end = hold_end_event;
+}
+
+void set_double_click_event(event double_click_event)
+{
+    on_double_click = double_click_event;
 }

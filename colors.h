@@ -9,19 +9,19 @@
 #define MAX_SATURATION 100
 #define MAX_BRIGHTNESS 100
 
-/* Normalized RGB */
+/**
+ * @brief Normalized RGB struct
+ */
 typedef struct
 {
     float R; //[0-1]
     float G; //[0-1]
     float B; //[0-1]
-} N_RGB;
+} NRGB;
 
-/*
-    Extended RGB for PWM
-    (apparently the range of the PWM duty cycle
-    in PWM driver exceeds the range of the RGB value)
-*/
+/**
+ * @brief Extended RGB for PWM
+ */
 typedef struct
 {
     uint16_t R;
@@ -29,6 +29,9 @@ typedef struct
     uint16_t B;
 } RGB_16;
 
+/**
+ * @brief HSB color struct
+ */
 typedef struct
 {
     uint16_t H; //0-360
@@ -36,32 +39,40 @@ typedef struct
     uint8_t B; //0-100
 } HSB;
 
-/* HSB delta struct for HSB color changing (with possible negative values) */
-typedef struct
-{
-    int8_t H;
-    int8_t S;
-    int8_t B;
-} HSB_delta;
+/**
+ * @brief Translates HSB to normalized RGB
+ *
+ * @param in Initial color
+ * @param out Translated color
+ */
+void HSB_to_N_RGB(const HSB *in, NRGB *out);
 
-/* Colors */
-extern RGB_16 pwm_rgb_color;
-extern HSB_delta hsb_delta;
-extern HSB hsb_color;
+/*  */
+/**
+ * @brief Translates HSB to extended RGB
+ *
+ * @param in Initial color
+ * @param out Translated color
+ * @param factor Maximum value of translated color (normalized RGB multiplier basically)
+ */
+void HSB_to_RGB_16(const HSB *in, RGB_16 *out, const uint16_t factor);
 
-/* Translates HSB to normalized RGB */
-void HSB_to_N_RGB(HSB *in, N_RGB *out);
+/**
+ * @brief Adds *addenum HSB values to the corresponding *color HSB values
+ * and clamps result between HSB color scheme bounaries
+ *
+ * @param color initial color
+ * @param addenum color values of which will be added from initial color values
+ */
+void hsb_add(HSB *color, const HSB *addenum);
 
-/* Translates HSB to extended RGB */
-void HSB_to_RGB_16(HSB *in, RGB_16 *out, uint16_t factor);
-
-/* Addes *addenum HSB values to the corresponding *color HSB values */
-void add_hsb(HSB *color, HSB_delta *addenum);
-
-/*
-    Same *delta to *color addition with extra step of reversing delta
-    when one of *color values reaches its HSB min/max range.
-*/
-void add_delta(HSB *color, HSB_delta *delta);
+/**
+ * @brief Subtracts *subtrahend HSB values from the corresponding *color HSB values
+ * and clamps result between HSB color scheme bounaries
+ *
+ * @param color initial color
+ * @param subtrahend color values of which will be subtracted from initial color
+ */
+void hsb_subtract(HSB *color, const HSB *subtrahend);
 
 #endif

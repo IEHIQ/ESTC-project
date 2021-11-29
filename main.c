@@ -84,28 +84,6 @@ void logs_init()
     NRF_LOG_DEFAULT_BACKENDS_INIT();
 }
 
-/* Timer definition. */
-APP_TIMER_DEF(led_timer);
-
-/* Empty pointer stub. */
-void * stub = NULL;
-
-/**
- * @brief LED color changing handler.
- */
-void led_timer_handler(void *context)
-{
-    add_delta(&hsb_color, &hsb_delta);
-    HSB_to_RGB_16(&hsb_color, &pwm_rgb_color, MAX_DC);
-    *pwm_r = pwm_rgb_color.R;
-    *pwm_g = pwm_rgb_color.G;
-    *pwm_b = pwm_rgb_color.B;
-
-    //NRF_LOG_INFO("Current RGB (%d, %d, %d)", *pwm_r, *pwm_g, *pwm_b);
-    //NRF_LOG_INFO("Current HSB (%d, %d, %d)", hsb_color.H, hsb_color.S, hsb_color.B);
-    //NRF_LOG_INFO("Current delta (%d, %d, %d)", hsb_delta.H, hsb_delta.S, hsb_delta.B);
-}
-
 /**
  * @brief Event that triggers when button holding begins.
  * (Launches specific color changing timer according to current mode.)
@@ -117,23 +95,7 @@ void on_btn_hold_start()
         (with variables handler triggers only once).
         Perhaps i misunderstood something here
     */
-    switch (current_mode)
-    {
-        case HUE:
-            app_timer_start(led_timer, HUE_STEP_DELAY_TICKS, NULL);
-            break;
-
-        case SATURATION:
-            app_timer_start(led_timer, SATURATION_STEP_DELAY_TICKS, NULL);
-            break;
-
-        case BRIGHTNESS:
-            app_timer_start(led_timer, BRIGHTNESS_STEP_DELAY_TICKS, NULL);
-            break;
-
-        default:
-            break;
-    }
+   start_led1(HSB_STEP_DELAY_TICKS);
     //NRF_LOG_INFO("Hold started");
 }
 
@@ -143,7 +105,7 @@ void on_btn_hold_start()
  */
 void on_btn_hold_end()
 {
-    app_timer_stop(led_timer);
+    stop_led1();
     //NRF_LOG_INFO("Hold ended");
 }
 
@@ -154,16 +116,31 @@ void on_btn_hold_end()
 void on_btn_double_click()
 {
     //NRF_LOG_INFO("Double click");
-    next_mode(&hsb_color, &hsb_delta);
+    stop_led0();
+    next_mode();
+    set_hsb_delta(get_current_mode_config().hsb_delta);
+    switch (get_current_mode())
+    {
+        case HUE:
+            start_led0(HUE_MODE_STEP_DELAY_TICKS);
+            break;
+        case SATURATION:
+            start_led0(SATURATION_MODE_STEP_DELAY_TICKS);
+            break;
+        case BRIGHTNESS:
+            turn_on_led0();
+            break;
+        default:
+            turn_off_led0();
+            break;
+    }
 }
 
-/* Configure color changing timer. */
-void led_timer_init()
+void button_events_init()
 {
-    app_timer_create(&led_timer, APP_TIMER_MODE_REPEATED, led_timer_handler);
-    on_hold_start = on_btn_hold_start;
-    on_hold_end = on_btn_hold_end;
-    on_double_click = on_btn_double_click;
+    set_hold_start_event(on_btn_hold_start);
+    set_hold_end_event(on_btn_hold_end);
+    set_double_click_event(on_btn_double_click);
 }
 
 /**
@@ -171,18 +148,21 @@ void led_timer_init()
  */
 int main(void)
 {
+    app_timer_init();
     /* Starting logs. */
     logs_init();
 
     /* Configure PWM. */
-    pwm_init();
+    init_pwm();
 
     /* Configure button. */
-    button_init();
+    init_button();
+    button_events_init();
 
     /* Configure LED timer. */
-    led_timer_init();
+    init_leds();
 
+    start_pwm();
     /* Toggle LEDs according to current state. */
     while (true)
     {

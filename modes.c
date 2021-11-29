@@ -1,7 +1,8 @@
 #include "modes.h"
+#define MODES_COUNT 4
 
-modes current_mode = OFF;
-const mode_config MODE_CONFIGS[MODES_COUNT] =
+static modes current_mode = OFF;
+static const mode_config MODE_CONFIGS[MODES_COUNT] =
 {
     {OFF,        {0, 0, 0}},
     {HUE,        {HUE_STEP, 0, 0}},
@@ -9,24 +10,17 @@ const mode_config MODE_CONFIGS[MODES_COUNT] =
     {BRIGHTNESS, {0, 0, BRIGHTNESS_STEP}}
 };
 
-void reverse(HSB_delta *color_delta)
+modes get_current_mode()
 {
-    color_delta->H *= -1;
-    color_delta->S *= -1;
-    color_delta->B *= -1;
+    return current_mode;
 }
 
-void next_mode(HSB *color, HSB_delta *color_delta)
+mode_config get_current_mode_config()
+{
+    return MODE_CONFIGS[current_mode];
+}
+
+void next_mode()
 {
     current_mode = (current_mode + 1) % 4;
-    *color_delta = MODE_CONFIGS[current_mode].delta;
-    if (current_mode == OFF)
-    {
-        pwm_stop();
-    }
-    else if (current_mode == HUE)
-    {
-        pwm_start();
-    }
-
 }

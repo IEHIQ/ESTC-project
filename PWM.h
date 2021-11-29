@@ -3,23 +3,38 @@
 #pragma once
 
 #include <stddef.h>
-#include "LED.h"
+#include "colors.h"
 #include "nrfx_pwm.h"
 
-#define MAX_DC 1023
+#define MAX_DC 1000
 
-/* Pointers for each subLED (for convenience) */
-extern uint16_t * pwm_r;
-extern uint16_t * pwm_g;
-extern uint16_t * pwm_b;
+/**
+ * @brief Configures PWM
+ */
+void init_pwm();
 
-/* Configures PWM */
-void pwm_init();
+/**
+ * @brief Stops PWM playback
+ */
+void stop_pwm();
 
-/* Stops PWM playback */
-void pwm_stop();
+/**
+ * @brief Starts PWM playback
+ */
+void start_pwm();
 
-/* Starts PWM playback */
-void pwm_start();
+/**
+ * @brief Sets duty cycle value for LED 0
+ *
+ * @param color Value of duty cycle
+ */
+void set_pwm_led_0(const uint16_t color);
+
+/**
+ * @brief Sets duty cycle values for each of RGB LED channels
+ *
+ * @param color Values for each of RGB LED channels
+ */
+void set_pwm_led_1(const RGB_16 *color);
 
 #endif

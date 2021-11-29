@@ -4,19 +4,25 @@
 #include "app_timer.h"
 
 #include "colors.h"
-#include "PWM.h"
 
-#define MODES_COUNT 4
-
-/* HSB delta values */
-#define HUE_STEP 1
+/* HSB color values steps */
+#define HUE_STEP        3
 #define SATURATION_STEP 1
 #define BRIGHTNESS_STEP 1
 
-#define ZERO 0
-#define HUE_STEP_DELAY_TICKS APP_TIMER_TICKS(10) //Blink time: 360 * 10 = 3600 ms
-#define SATURATION_STEP_DELAY_TICKS APP_TIMER_TICKS(10) //Blink time: 100 * 10 = 1000 ms
-#define BRIGHTNESS_STEP_DELAY_TICKS APP_TIMER_TICKS(5) //Blink time: 100 * 5 = 500 ms
+/* HSB color values changing steps delays */
+#define HSB_STEP_DELAY_MS    20
+#define HSB_STEP_DELAY_TICKS APP_TIMER_TICKS(HSB_STEP_DELAY_MS)
+
+/* LED 0 value step */
+#define LED_0_STEP 5
+
+/* LED 0 values changing delays for different modes */
+#define HUE_MODE_STEP_DELAY_MS        8
+#define SATURATION_MODE_STEP_DELAY_MS 2
+
+#define HUE_MODE_STEP_DELAY_TICKS        APP_TIMER_TICKS(HUE_MODE_STEP_DELAY_MS)
+#define SATURATION_MODE_STEP_DELAY_TICKS APP_TIMER_TICKS(SATURATION_MODE_STEP_DELAY_MS)
 
 /* LED color changing modes */
 typedef enum
@@ -31,18 +37,27 @@ typedef enum
 typedef struct
 {
     modes mode;
-    HSB_delta delta;
+    HSB hsb_delta;
 } mode_config;
 
-/* Array for storing all modes values */
-extern const mode_config MODE_CONFIGS[MODES_COUNT];
+/**
+ * @brief Returns current LED color changing mode
+ *
+ * @return Current mode
+ */
+modes get_current_mode();
 
-extern modes current_mode;
+/**
+ * @brief Returns current LED color changing mode config
+ *
+ * @return Current mode config
+ */
+mode_config get_current_mode_config();
 
-/* Reverses delta (multiplies all HSB values by -1) */
-void reverse(HSB_delta *color_delta);
-
-/* Switches to next mode (...off -> changing hue -> changing saturation -> changing brightness -> off...) */
-void next_mode(HSB *color, HSB_delta *color_delta);
+/**
+ * @brief Switches to next mode in cycles
+ * (...off -> changing hue -> changing saturation -> changing brightness -> off...)
+ */
+void next_mode();
 
 #endif

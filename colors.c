@@ -1,11 +1,7 @@
 #include "colors.h"
-#include "modes.h"
+#include "utils.h"
 
-RGB_16 pwm_rgb_color = {0, 0, 0};
-HSB hsb_color = {0, 50, 50};
-HSB_delta hsb_delta = {0, 0, 0};
-
-void HSB_to_N_RGB(HSB *in, N_RGB *out)
+void HSB_to_N_RGB(const HSB *in, NRGB *out)
 {
     float _h = (float)in->H / 60.0f;
     float _s = (float)in->S / 100.0f;
@@ -55,9 +51,9 @@ void HSB_to_N_RGB(HSB *in, N_RGB *out)
     out->B = _blu + m;
 }
 
-void HSB_to_RGB_16(HSB *in, RGB_16 *out, uint16_t factor)
+void HSB_to_RGB_16(const HSB *in, RGB_16 *out, const uint16_t factor)
 {
-    N_RGB nrgb;
+    NRGB nrgb;
     HSB_to_N_RGB(in, &nrgb);
 
     out->R = (uint16_t)(nrgb.R * (float)factor);
@@ -65,28 +61,16 @@ void HSB_to_RGB_16(HSB *in, RGB_16 *out, uint16_t factor)
     out->B = (uint16_t)(nrgb.B * (float)factor);
 }
 
-void add_hsb(HSB *color, HSB_delta *addenum)
+void hsb_add(HSB *color, const HSB *addenum)
 {
-    color->H += addenum->H;
-    color->H %= (MAX_HUE + 1);
-
-    color->S += addenum->S;
-    color->S %= (MAX_SATURATION + 1);
-
-    color->B += addenum->B;
-    color->B %= (MAX_BRIGHTNESS + 1);
+    color->H = clamp(color->H + addenum->H, 0, MAX_HUE);
+    color->S = clamp(color->S + addenum->S, 0, MAX_SATURATION);
+    color->B = clamp(color->B + addenum->B, 0, MAX_BRIGHTNESS);
 }
 
-void add_delta(HSB *color, HSB_delta *delta)
+void hsb_subtract(HSB *color, const HSB *subtrahend)
 {
-    add_hsb(color, delta);
-
-    if (
-        (current_mode == HUE        && (color->H == 0 || color->H == MAX_HUE))        ||
-        (current_mode == SATURATION && (color->S == 0 || color->S == MAX_SATURATION)) ||
-        (current_mode == BRIGHTNESS && (color->B == 0 || color->B == MAX_BRIGHTNESS))
-       )
-    {
-        reverse(delta);
-    }
+    color->H = clamp(color->H - subtrahend->H, 0, MAX_HUE);
+    color->S = clamp(color->S - subtrahend->S, 0, MAX_SATURATION);
+    color->B = clamp(color->B - subtrahend->B, 0, MAX_BRIGHTNESS);
 }

@@ -57,6 +57,8 @@ SRC_FILES += \
   $(PROJ_DIR)/colors.c\
   $(PROJ_DIR)/PWM.c\
   $(PROJ_DIR)/modes.c\
+  $(PROJ_DIR)/LED.c\
+  $(PROJ_DIR)/utils.c\
   \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_pwm.c \
   $(SDK_ROOT)/components/libraries/timer/app_timer2.c \
