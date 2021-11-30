@@ -30,11 +30,14 @@ void pwm_sequence_init()
     pwm_sequence.length = NRF_PWM_VALUES_LENGTH(pwm_values_individual);
     pwm_sequence.repeats = 0;
     pwm_sequence.end_delay = 0;
+
+    RGB_16 current_rgb = get_current_rgb();
+    set_pwm_led_1(&current_rgb);
 }
 
 void pwm_handler(nrfx_pwm_evt_type_t event_type)
 {
-    //NRF_LOG_INFO("PWM");
+
 }
 
 void init_pwm()

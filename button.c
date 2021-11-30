@@ -21,11 +21,11 @@ static bool is_double_click;
 
 static void button_timer_handler(void *context)
 {
-    //NRF_LOG_INFO("Handler");
+    NRF_LOG_DEBUG("Handler");
     is_double_click = false;
     if (!nrf_gpio_pin_read(button_pin))
     {
-        //NRF_LOG_INFO("Holding!");
+        NRF_LOG_DEBUG("Holding!");
         on_hold_start();
     }
 };
@@ -46,7 +46,7 @@ static void click(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
     if (!nrf_gpio_pin_read(button_pin))
     {
-        //NRF_LOG_INFO("Pressed!");
+        NRF_LOG_DEBUG("Pressed!");
         if (!is_double_click)
         {
             is_double_click = true;
@@ -54,7 +54,7 @@ static void click(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
         }
         else
         {
-            //NRF_LOG_INFO("Double click!");
+            NRF_LOG_DEBUG("Double click!");
             is_double_click = false;
             on_double_click();
             app_timer_stop(btn_timer);
@@ -62,7 +62,7 @@ static void click(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
     }
     else
     {
-        //NRF_LOG_INFO("Released!");
+        NRF_LOG_DEBUG("Released!");
         on_hold_end();
     }
 }

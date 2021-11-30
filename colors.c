@@ -74,3 +74,17 @@ void hsb_subtract(HSB *color, const HSB *subtrahend)
     color->S = clamp(color->S - subtrahend->S, 0, MAX_SATURATION);
     color->B = clamp(color->B - subtrahend->B, 0, MAX_BRIGHTNESS);
 }
+
+uint32_t HSB_to_word(const HSB *color)
+{
+    return (uint32_t)((color->H<<16) + (color->S<<8) + color->B);
+}
+
+void word_to_HSB(uint32_t word, HSB *color)
+{
+    color->B = (uint8_t)(word & 255);
+    word >>= 8;
+    color->S = (uint8_t)(word & 255);
+    word >>= 8;
+    color->H = (uint16_t)(word & 65535);
+}

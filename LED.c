@@ -1,9 +1,11 @@
 #include "LED.h"
+
 #include "utils.h"
 #include "PWM.h"
 #include "modes.h"
 #include "app_timer.h"
 #include "nrf_log.h"
+#include "memory.h"
 
 /* LED_0 timer definition. */
 APP_TIMER_DEF(led0_timer);
@@ -29,28 +31,54 @@ typedef void (*hsb_modifyer)(HSB*, const HSB*);
 static hsb_modifyer apply_hsb_delta;
 
 /**
+ * @brief Loads last HSB color from nvm
+ */
+void load_last_hsb()
+{
+    load_HSB(&current_hsb);
+    HSB_to_RGB_16(&current_hsb, &current_rgb, MAX_DC);
+}
+
+/**
+ * @brief Saves current HSB color into nvm
+ */
+void save_current_hsb()
+{
+    save_HSB(&current_hsb);
+}
+
+/**
  * @brief Configures all LEDs parameters
  */
 void init_leds_config()
 {
     current_hsb = (HSB){0, 100, 100};
+    load_last_hsb();
     current_hsb_delta = (HSB){0, 0 ,0};
-
-    current_rgb = (RGB_16){0, 0, 0};
 
     current_led0_color = 0;
     current_led0_color_delta = LED_0_STEP;
     apply_hsb_delta = hsb_add;
 }
 
-/**
- * @brief Sets the hsb delta parameter
- *
- * @param new_delta New delta value
- */
+void set_current_hsb(const HSB *color)
+{
+    current_hsb = *color;
+}
+
 void set_hsb_delta(const HSB new_delta)
 {
     current_hsb_delta = new_delta;
+}
+
+HSB get_current_hsb()
+{
+    return current_hsb;
+}
+
+RGB_16 get_current_rgb()
+{
+    return current_rgb;
 }
 
 /**
@@ -88,7 +116,7 @@ void led1_timer_handler(void *context)
 /**
  * @brief Configures LED 1 color changing timer
  */
-void init_led1_timer()
+static void init_led1_timer()
 {
     app_timer_create(&led1_timer, APP_TIMER_MODE_REPEATED, led1_timer_handler);
 }
@@ -109,7 +137,7 @@ void led0_timer_handler(void *context)
 /**
  * @brief Configures LED 0 color changing timer
  */
-void init_led0_timer()
+static void init_led0_timer()
 {
     app_timer_create(&led0_timer, APP_TIMER_MODE_REPEATED, led0_timer_handler);
 }
