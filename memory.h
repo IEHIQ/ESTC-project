@@ -15,7 +15,7 @@ void init_memory();
  *
  * @param color Color to be saved
  */
-void save_HSB(HSB *color);
+void save_HSB(const HSB *color);
 
 /**
  * @brief Loads last saved HSB color from nvm

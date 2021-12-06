@@ -27,12 +27,13 @@ void init_memory()
  */
 static void erase_pages()
 {
-    nrfx_nvmc_page_erase(NVM_START);
-    nrfx_nvmc_page_erase(NVM_START + PAGE_SIZE_BYTES);
-    nrfx_nvmc_page_erase(NVM_START + 2 * PAGE_SIZE_BYTES);
+    for (size_t i = 0; i < 3; i++)
+    {
+        nrfx_nvmc_page_erase(NVM_START + i * PAGE_SIZE_BYTES);
+    }
 }
 
-void save_HSB(HSB *color)
+void save_HSB(const HSB *color)
 {
     NRF_LOG_DEBUG("Saving...");
     uint32_t word = HSB_to_word(color);
