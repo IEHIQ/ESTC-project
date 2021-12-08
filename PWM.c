@@ -1,43 +1,71 @@
 #include "PWM.h"
+#include "LED.h"
 
-void PWM_init(PWM_config *config)
+/* PWM config parameters */
+static nrfx_pwm_t pwm_instance = NRFX_PWM_INSTANCE(0);
+static nrfx_pwm_config_t pwm_config = NRFX_PWM_DEFAULT_CONFIG;
+static nrf_pwm_values_individual_t pwm_values_individual = { 0, 0, 0, 0 };
+static nrf_pwm_values_t pwm_values;
+static nrf_pwm_sequence_t pwm_sequence;
+
+/**
+ * @brief Configures pwm_config
+ */
+void pwm_config_init()
 {
-    config->PWM_delay = BLINK_DELAY_MCS / 100;
-    config->current_DC = 100;
-    config->PWM_step = 10000 / PWM_FREQ;
-    config->DC_delta = -1;
-    config->DC_times[0] = config->PWM_step * config->current_DC;
-    config->DC_times[1] = 0;
-    config->DC_times_index = 0;
-    config->last_DC_change_time = BLINK_DELAY_MCS;
+    pwm_config.load_mode = NRF_PWM_LOAD_INDIVIDUAL;
+
+    pwm_config.output_pins[0] = LED_0 | NRFX_PWM_PIN_INVERTED;
+    pwm_config.output_pins[1] = LED_R | NRFX_PWM_PIN_INVERTED;
+    pwm_config.output_pins[2] = LED_G | NRFX_PWM_PIN_INVERTED;
+    pwm_config.output_pins[3] = LED_B | NRFX_PWM_PIN_INVERTED;
 }
 
-void toggle_DC_times_index(PWM_config *config)
+/**
+ * @brief Configures pwm_sequence
+ */
+void pwm_sequence_init()
 {
-    config->DC_times_index = ~(config->DC_times_index) & 1;
+    pwm_sequence.values = pwm_values;
+    pwm_sequence.length = NRF_PWM_VALUES_LENGTH(pwm_values_individual);
+    pwm_sequence.repeats = 0;
+    pwm_sequence.end_delay = 0;
+
+    RGB_16 current_rgb = get_current_rgb();
+    set_pwm_led_1(&current_rgb);
 }
 
-void PWM_set_blink(PWM_config *config)
+void pwm_handler(nrfx_pwm_evt_type_t event_type)
 {
-    config->DC_delta *= -1;
-    config->last_DC_change_time = BLINK_DELAY_MCS;
+
 }
 
-void change_DC(PWM_config *config, int32_t *time) 
+void init_pwm()
 {
-    config->last_DC_change_time = *time;
-    config->current_DC += config->DC_delta;
-    config->DC_times[0] = config->PWM_step * config->current_DC; 
-    config->DC_times[1] = config->PWM_step * (100 - config->current_DC);
+    pwm_config_init();
+    pwm_values.p_individual = &pwm_values_individual;
+    nrfx_pwm_init(&pwm_instance, &pwm_config, pwm_handler);
+    pwm_sequence_init();
 }
 
-void PWM_LED_toggle(PWM_config *PWM_config, LEDs_config *LEDs_config)
+void stop_pwm()
 {
-    LED_toggle(&LEDs_config->current_LED);
-    toggle_DC_times_index(PWM_config);
+    nrfx_pwm_stop(&pwm_instance, false);
 }
 
-int32_t get_current_DC_time(PWM_config *PWM_config)
+void start_pwm()
 {
-    return PWM_config->DC_times[PWM_config->DC_times_index];
+    nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, 1, NRFX_PWM_FLAG_LOOP);
+}
+
+void set_pwm_led_0(const uint16_t color)
+{
+    pwm_values_individual.channel_0 = color;
+}
+
+void set_pwm_led_1(const RGB_16 *color)
+{
+    pwm_values_individual.channel_1 = color->R;
+    pwm_values_individual.channel_2 = color->G;
+    pwm_values_individual.channel_3 = color->B;
 }

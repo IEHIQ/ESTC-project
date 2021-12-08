@@ -3,35 +3,92 @@
 #pragma once
 
 #include <stdint.h>
+#include "colors.h"
+#include "nrf_gpio.h"
 
-#define LEDS_COUNT 4
-#define BLINK_DELAY 500
-#define BLINK_DELAY_MCS 100000
-
-extern const uint32_t LED_gpio_pins[LEDS_COUNT];
-
-/**
- * @brief Struct for storing LEDs config
- */
-typedef struct 
-{
-    uint8_t current_LED;
-    uint8_t blinks_left;
-} LEDs_config;
+/* Pins values configuration for LEDs */
+#define LED_0 NRF_GPIO_PIN_MAP(0, 6)
+#define LED_R NRF_GPIO_PIN_MAP(0, 8)
+#define LED_G NRF_GPIO_PIN_MAP(1, 9)
+#define LED_B NRF_GPIO_PIN_MAP(0, 12)
 
 /**
- * @brief Procedure for initialization an array with LED pin numbers
+ * @brief Configures LEDs
  */
-void LEDs_init(LEDs_config *config);
+void init_leds();
 
 /**
- * @brief Procedure-wrapper for toggling LEDs
+ * @brief Starts LED 0 timer
+ *
+ * @param delay Time in ticks that passes to app_timer_start function
  */
-void LED_toggle(uint8_t *LED_num);
+void start_led0(const uint32_t delay);
 
 /**
- * @brief Procedure for switching values of a LED config for next blink phase (lighting or fading)
+ * @brief Starts LED 1 timer
+ *
+ * @param delay Time in ticks that passes to app_timer_start function
  */
-void LED_set_blink(LEDs_config *config);
+void start_led1(const uint32_t delay);
+
+/**
+ * @brief Stops LED 0 timer
+ */
+void stop_led0();
+
+/**
+ * @brief Stops LED 1 timer
+ */
+void stop_led1();
+
+/**
+ * @brief Turns off LED 0 (and stops its timer so LED wouldn't blink)
+ */
+void turn_off_led0();
+
+/**
+ * @brief Turns on LED 0 (and stops its timer so LED wouldn't blink)
+ */
+void turn_on_led0();
+
+/**
+ * @brief Turns off LED 1 (and stops its timer so LED wouldn't blink)
+ */
+void turn_off_led1();
+
+/**
+ * @brief Sets the hsb delta parameter
+ *
+ * @param new_delta New delta value
+ */
+void set_hsb_delta(const HSB new_delta);
+
+/**
+ * @brief Returns current HSB color value
+ *
+ * @return Current HSB color value
+ */
+HSB get_current_hsb();
+
+
+/**
+ * @brief Sets current HSB color value with *color value
+ *
+ * @param new_delta New HSB color value
+ */
+void set_current_hsb(const HSB *color);
+
+
+/**
+ * @brief Returns current RGB color value
+ *
+ * @return Current RGB color value
+ */
+RGB_16 get_current_rgb();
+
+/**
+ * @brief Saves current HSB color into nvm
+ */
+void save_current_hsb();
 
 #endif

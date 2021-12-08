@@ -53,9 +53,21 @@ SRC_FILES += \
   \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
   \
-  $(PROJ_DIR)/LED.c\
   $(PROJ_DIR)/button.c\
+  $(PROJ_DIR)/colors.c\
   $(PROJ_DIR)/PWM.c\
+  $(PROJ_DIR)/modes.c\
+  $(PROJ_DIR)/LED.c\
+  $(PROJ_DIR)/utils.c\
+  $(PROJ_DIR)/memory.c\
+  \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_pwm.c \
+  $(SDK_ROOT)/components/libraries/timer/app_timer2.c \
+  $(SDK_ROOT)/components/libraries/timer/drv_rtc.c \
+  $(SDK_ROOT)/components/libraries/sortlist/nrf_sortlist.c \
+  \
+  $(SDK_ROOT)/modules/nrfx/hal/nrf_nvmc.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_nvmc.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
@@ -91,6 +103,12 @@ INC_FOLDERS += \
   $(SDK_ROOT)/external/utf_converter \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/libraries/timer \
+  \
+  $(SDK_ROOT)/components/libraries/sortlist \
+  \
+  $(SDK_ROOT)/components/libraries/bootloader/dfu \
+  $(SDK_ROOT)/components/libraries/bootloader \
+
 
 # Libraries common to all targets
 LIB_FILES += \
@@ -116,6 +134,8 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums
+CFLAGS += -DAPP_TIMER_V2
+CFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 
 # C++ flags common to all targets
 CXXFLAGS += $(OPT)

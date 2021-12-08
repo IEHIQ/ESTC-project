@@ -3,62 +3,38 @@
 #pragma once
 
 #include <stddef.h>
-#include "LED.h"
+#include "colors.h"
+#include "nrfx_pwm.h"
 
-#define PWM_FREQ 1000
-
-typedef struct
-{
-    /* DC - duty cycle. */
-
-    /* Time in microseconds during which DC value should not change. */
-    uint32_t PWM_delay;
-    /* 
-    1% of time of each PWM cycle.
-    (10 000 - 1% of a second in microseconds)
-    */
-    uint32_t PWM_step;
-    /* Current DC value (0-100%). */
-    uint32_t current_DC;
-    /* The "direction" towards which DC value will change (increment/decrement). */
-    int8_t DC_delta;
-    /* Array with t_on, and t_off values in microseconds for current DC state. */
-    int32_t DC_times[2];
-    /* Current DC time index (t_on or t_off). */
-    size_t DC_times_index;
-    /* Timestamp of last DC value change. */
-    int32_t last_DC_change_time;
-
-} PWM_config;
+#define MAX_DC 1000
 
 /**
- * @brief Peocedure for PWM config initialization
+ * @brief Configures PWM
  */
-void PWM_init(PWM_config *config);
+void init_pwm();
 
 /**
- * @brief Procedure for toggling DC_times_index value of a PWM config
+ * @brief Stops PWM playback
  */
-void toggle_DC_times_index(PWM_config *config);
+void stop_pwm();
 
 /**
- * @brief Procedure for switching values of a PWM config for next blink phase (lighting or fading)
+ * @brief Starts PWM playback
  */
-void PWM_set_blink(PWM_config *config);
+void start_pwm();
 
 /**
- * @brief Procedure for changing DC value of PWM config
+ * @brief Sets duty cycle value for LED 0
+ *
+ * @param color Value of duty cycle
  */
-void change_DC(PWM_config *config, int32_t *time);
+void set_pwm_led_0(const uint16_t color);
 
 /**
- * @brief Procedure for toggling current LED and toggle DC_times_index PWM config parameter
+ * @brief Sets duty cycle values for each of RGB LED channels
+ *
+ * @param color Values for each of RGB LED channels
  */
-void PWM_LED_toggle(PWM_config *PWM_config, LEDs_config *LEDs_config);
-
-/**
- * @brief Function that returns current_DC_time parameter value  
- */
-int32_t get_current_DC_time(PWM_config *PWM_config);
+void set_pwm_led_1(const RGB_16 *color);
 
 #endif

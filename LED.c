@@ -1,40 +1,188 @@
 #include "LED.h"
 
-#include "nrf_delay.h"
-#include "nrf_gpio.h"
+#include "utils.h"
+#include "PWM.h"
+#include "modes.h"
+#include "app_timer.h"
+#include "nrf_log.h"
+#include "memory.h"
 
-const uint8_t blink_counts[LEDS_COUNT] = {6, 5, 8, 7};
+/* LED_0 timer definition. */
+APP_TIMER_DEF(led0_timer);
 
-const uint32_t LED_gpio_pins[LEDS_COUNT] = 
+/* LED_1 timer definition. */
+APP_TIMER_DEF(led1_timer);
+
+/* Consts for black colors */
+static const uint16_t zero = 0;
+static const RGB_16 black = {0, 0, 0};
+
+static HSB current_hsb;
+static HSB current_hsb_delta;
+
+static RGB_16 current_rgb;
+
+/* Current and delta colors (duty cycles) value for led_0*/
+static uint16_t current_led0_color;
+static int16_t current_led0_color_delta;
+
+/* Function poitner for changing HSB color (increase or decrease) */
+typedef void (*hsb_modifyer)(HSB*, const HSB*);
+static hsb_modifyer apply_hsb_delta;
+
+/**
+ * @brief Loads last HSB color from nvm
+ */
+void load_last_hsb()
 {
-    NRF_GPIO_PIN_MAP(0, 6),
-    NRF_GPIO_PIN_MAP(0, 8),
-    NRF_GPIO_PIN_MAP(1, 9), 
-    NRF_GPIO_PIN_MAP(0, 12)
-};
-
-void LEDs_init(LEDs_config *config)
-{   
-    for (int i = 0; i < LEDS_COUNT; i++) 
-    {
-        nrf_gpio_cfg_output(LED_gpio_pins[i]);
-        nrf_gpio_pin_write(LED_gpio_pins[i], 1);
-    }
-    config->current_LED = 0;
-    config->blinks_left = blink_counts[config->current_LED] * 2;
+    load_HSB(&current_hsb);
+    HSB_to_RGB_16(&current_hsb, &current_rgb, MAX_DC);
 }
 
-void LED_toggle(uint8_t *LED_num) 
+/**
+ * @brief Saves current HSB color into nvm
+ */
+void save_current_hsb()
 {
-    nrf_gpio_pin_toggle(LED_gpio_pins[*LED_num]);
+    save_HSB(&current_hsb);
 }
 
-void LED_set_blink(LEDs_config *config)
+/**
+ * @brief Configures all LEDs parameters
+ */
+void init_leds_config()
 {
-    config->blinks_left -= 1;
-    if (config->blinks_left == 0) 
+    current_hsb = (HSB){0, 100, 100};
+    load_last_hsb();
+    current_hsb_delta = (HSB){0, 0 ,0};
+
+    current_led0_color = 0;
+    current_led0_color_delta = LED_0_STEP;
+    apply_hsb_delta = hsb_add;
+}
+
+void set_current_hsb(const HSB *color)
+{
+    current_hsb = *color;
+}
+
+void set_hsb_delta(const HSB new_delta)
+{
+    current_hsb_delta = new_delta;
+}
+
+HSB get_current_hsb()
+{
+    return current_hsb;
+}
+
+RGB_16 get_current_rgb()
+{
+    return current_rgb;
+}
+
+/**
+ * @brief Checks current blink phase and changes HSB modifying function
+ * (add or subtract delta on each timer cycle) if needed
+ */
+void checkset_blink_phase()
+{
+    modes mode = get_current_mode();
+    if ((mode == HUE        && current_hsb.H == 0) ||
+        (mode == SATURATION && current_hsb.S == 0) ||
+        (mode == BRIGHTNESS && current_hsb.B == 0))
     {
-        config->current_LED = (config->current_LED + 1) % LEDS_COUNT;
-        config->blinks_left = blink_counts[config->current_LED] * 2;
+        apply_hsb_delta = hsb_add;
     }
+    else if ((mode == HUE        && current_hsb.H == MAX_HUE)        ||
+             (mode == SATURATION && current_hsb.S == MAX_SATURATION) ||
+             (mode == BRIGHTNESS && current_hsb.B == MAX_BRIGHTNESS))
+    {
+        apply_hsb_delta = hsb_subtract;
+    }
+}
+
+/**
+ * @brief LED 1 color changing handler
+ */
+void led1_timer_handler(void *context)
+{
+    apply_hsb_delta(&current_hsb, &current_hsb_delta);
+    checkset_blink_phase();
+    HSB_to_RGB_16(&current_hsb, &current_rgb, MAX_DC);
+    set_pwm_led_1(&current_rgb);
+}
+
+/**
+ * @brief Configures LED 1 color changing timer
+ */
+static void init_led1_timer()
+{
+    app_timer_create(&led1_timer, APP_TIMER_MODE_REPEATED, led1_timer_handler);
+}
+
+/**
+ * @brief LED 0 color changing handler
+ */
+void led0_timer_handler(void *context)
+{
+    current_led0_color = clamp(current_led0_color + current_led0_color_delta, 0, MAX_DC);
+    if (current_led0_color == 0 || current_led0_color == MAX_DC)
+    {
+        current_led0_color_delta *= -1;
+    }
+    set_pwm_led_0(current_led0_color);
+}
+
+/**
+ * @brief Configures LED 0 color changing timer
+ */
+static void init_led0_timer()
+{
+    app_timer_create(&led0_timer, APP_TIMER_MODE_REPEATED, led0_timer_handler);
+}
+
+void init_leds()
+{
+    init_leds_config();
+    init_led0_timer();
+    init_led1_timer();
+}
+
+void start_led0(const uint32_t delay)
+{
+    app_timer_start(led0_timer, delay, NULL);
+}
+
+void start_led1(const uint32_t delay)
+{
+    app_timer_start(led1_timer, delay, NULL);
+}
+
+void stop_led0()
+{
+    app_timer_stop(led0_timer);
+}
+
+void stop_led1()
+{
+    app_timer_stop(led1_timer);
+}
+
+void turn_off_led0()
+{
+    stop_led0();
+    set_pwm_led_0(zero);
+}
+
+void turn_on_led0()
+{
+    stop_led0();
+    set_pwm_led_0(MAX_DC);
+}
+
+void turn_off_led1()
+{
+    stop_led1();
+    set_pwm_led_1(&black);
 }

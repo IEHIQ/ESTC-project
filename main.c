@@ -51,7 +51,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 #include "nordic_common.h"
 #include "boards.h"
 
@@ -65,14 +64,13 @@
 
 #include "nrfx_systick.h"
 
-#include "LED.h"
 #include "button.h"
+#include "LED.h"
+#include "colors.h"
 #include "PWM.h"
+#include "modes.h"
+#include "memory.h"
 
-/* The time remaining until the next click for double-click to get detected. */
-extern uint32_t mcs_dclick_time_left;
-/* Current state of LEDs behaviour. */
-extern bool is_blinking;
 
 /**
  * @brief Procedure for logs initialization.
@@ -85,74 +83,90 @@ void logs_init()
 }
 
 /**
+ * @brief Event that triggers when button holding begins.
+ * (Launches specific color changing timer according to current mode.)
+ */
+void on_btn_hold_start()
+{
+    /*
+        For some reason timer works correctly only with <#define> delays
+        (with variables handler triggers only once).
+        Perhaps i misunderstood something here
+    */
+   start_led1(HSB_STEP_DELAY_TICKS);
+    NRF_LOG_DEBUG("Hold started");
+}
+
+/**
+ * @brief Event that triggers when button holding ends.
+ * (Stops color changing timer.)
+ */
+void on_btn_hold_end()
+{
+    stop_led1();
+    NRF_LOG_DEBUG("Hold ended");
+}
+
+/**
+ * @brief Event that triggers when double click happens.
+ * (Switches to the next color changing mode.)
+ */
+void on_btn_double_click()
+{
+    NRF_LOG_DEBUG("Double click");
+    stop_led0();
+    next_mode();
+    set_hsb_delta(get_current_mode_config().hsb_delta);
+    switch (get_current_mode())
+    {
+        case HUE:
+            start_led0(HUE_MODE_STEP_DELAY_TICKS);
+            break;
+        case SATURATION:
+            start_led0(SATURATION_MODE_STEP_DELAY_TICKS);
+            break;
+        case BRIGHTNESS:
+            turn_on_led0();
+            break;
+        default:
+            turn_off_led0();
+            save_current_hsb();
+            break;
+    }
+}
+/**
+ * @brief Sets button events
+ */
+void set_button_events()
+{
+    set_hold_start_event(on_btn_hold_start);
+    set_hold_end_event(on_btn_hold_end);
+    set_double_click_event(on_btn_double_click);
+}
+
+/**
  * @brief Function for application main entry.
  */
 int main(void)
 {
+    /* Init app_timer */
+    app_timer_init();
     /* Starting logs. */
     logs_init();
-
-    /* Variable for counting time when button is pressed. */
-    int32_t mcs_counter = BLINK_DELAY_MCS;
-
-    /* Variable for counting time when button is released. */
-    int32_t mcs_counter_static = 0;
-
-    /* Configure button. */
-    button_init();
-
-    /* Configure LEDs. */
-    LEDs_config LEDs_config;
-    LEDs_init(&LEDs_config);
-
+    /* Init memory params*/
+    init_memory();
+    /* Configure LEDs */
+    init_leds();
     /* Configure PWM. */
-    PWM_config PWM_config;
-    PWM_init(&PWM_config);
+    init_pwm();
+    /* Configure button. */
+    init_button();
+    set_button_events();
+    /* Start PWM playback */
+    start_pwm();
 
-    /* Configure timer. */
-    nrfx_systick_init();
-    nrfx_systick_state_t time_state = {0};
-    nrfx_systick_get(&time_state);
-
-
-    /* Toggle LEDs according to current state. */
     while (true)
     {
-        if (nrfx_systick_test(&time_state, 1))
-        {
-            nrfx_systick_get(&time_state);
-            mcs_counter_static++;
-
-            if (mcs_dclick_time_left > 0)
-                mcs_dclick_time_left--;
-
-            if (mcs_counter_static >= get_current_DC_time(&PWM_config))
-            {
-                mcs_counter_static = 0;
-                PWM_LED_toggle(&PWM_config, &LEDs_config);
-            }
-
-            if (is_blinking) 
-            {
-                mcs_counter--;
-
-                if (mcs_counter <= 0)
-                {
-                    //NRF_LOG_INFO("Counter zeroed.");
-                    mcs_counter = BLINK_DELAY_MCS;
-                    PWM_set_blink(&PWM_config);
-                    LED_set_blink(&LEDs_config);
-                }
-
-                if (mcs_counter <= PWM_config.last_DC_change_time - PWM_config.PWM_delay)
-                {
-                    //NRF_LOG_INFO("DC changed.");
-                    mcs_counter_static = get_current_DC_time(&PWM_config);
-                    change_DC(&PWM_config, &mcs_counter); 
-                }
-            }
-        }
-
         LOG_BACKEND_USB_PROCESS();
         NRF_LOG_PROCESS();
     }
