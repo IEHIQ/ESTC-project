@@ -75,4 +75,20 @@ void hsb_add(HSB *color, const HSB *addenum);
  */
 void hsb_subtract(HSB *color, const HSB *subtrahend);
 
+/**
+ * @brief Packs HSB color into single word variable
+ *
+ * @param color Color to be packed
+ * @return uint32_t Resulting word
+ */
+uint32_t HSB_to_word(const HSB *color);
+
+/**
+ * @brief Unpacks word into HSB color
+ *
+ * @param word Word to be unpacked
+ * @param color Resulting color
+ */
+void word_to_HSB(uint32_t word, HSB *color);
+
 #endif

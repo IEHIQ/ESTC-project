@@ -56,6 +56,39 @@ void turn_on_led0();
  */
 void turn_off_led1();
 
+/**
+ * @brief Sets the hsb delta parameter
+ *
+ * @param new_delta New delta value
+ */
 void set_hsb_delta(const HSB new_delta);
+
+/**
+ * @brief Returns current HSB color value
+ *
+ * @return Current HSB color value
+ */
+HSB get_current_hsb();
+
+
+/**
+ * @brief Sets current HSB color value with *color value
+ *
+ * @param new_delta New HSB color value
+ */
+void set_current_hsb(const HSB *color);
+
+
+/**
+ * @brief Returns current RGB color value
+ *
+ * @return Current RGB color value
+ */
+RGB_16 get_current_rgb();
+
+/**
+ * @brief Saves current HSB color into nvm
+ */
+void save_current_hsb();
 
 #endif

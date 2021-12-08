@@ -51,7 +51,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 #include "nordic_common.h"
 #include "boards.h"
 
@@ -70,9 +69,8 @@
 #include "colors.h"
 #include "PWM.h"
 #include "modes.h"
+#include "memory.h"
 
-#include "nrfx_pwm.h"
-#include "app_timer.h"
 
 /**
  * @brief Procedure for logs initialization.
@@ -96,7 +94,7 @@ void on_btn_hold_start()
         Perhaps i misunderstood something here
     */
    start_led1(HSB_STEP_DELAY_TICKS);
-    //NRF_LOG_INFO("Hold started");
+    NRF_LOG_DEBUG("Hold started");
 }
 
 /**
@@ -106,7 +104,7 @@ void on_btn_hold_start()
 void on_btn_hold_end()
 {
     stop_led1();
-    //NRF_LOG_INFO("Hold ended");
+    NRF_LOG_DEBUG("Hold ended");
 }
 
 /**
@@ -115,7 +113,7 @@ void on_btn_hold_end()
  */
 void on_btn_double_click()
 {
-    //NRF_LOG_INFO("Double click");
+    NRF_LOG_DEBUG("Double click");
     stop_led0();
     next_mode();
     set_hsb_delta(get_current_mode_config().hsb_delta);
@@ -132,11 +130,14 @@ void on_btn_double_click()
             break;
         default:
             turn_off_led0();
+            save_current_hsb();
             break;
     }
 }
-
-void button_events_init()
+/**
+ * @brief Sets button events
+ */
+void set_button_events()
 {
     set_hold_start_event(on_btn_hold_start);
     set_hold_end_event(on_btn_hold_end);
@@ -148,22 +149,22 @@ void button_events_init()
  */
 int main(void)
 {
+    /* Init app_timer */
     app_timer_init();
     /* Starting logs. */
     logs_init();
-
+    /* Init memory params*/
+    init_memory();
+    /* Configure LEDs */
+    init_leds();
     /* Configure PWM. */
     init_pwm();
-
     /* Configure button. */
     init_button();
-    button_events_init();
-
-    /* Configure LED timer. */
-    init_leds();
-
+    set_button_events();
+    /* Start PWM playback */
     start_pwm();
-    /* Toggle LEDs according to current state. */
+
     while (true)
     {
         LOG_BACKEND_USB_PROCESS();
