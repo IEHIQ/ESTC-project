@@ -87,6 +87,13 @@ void set_current_hsb(const HSB *color);
 RGB_16 get_current_rgb();
 
 /**
+ * @brief Sets current RGB color value
+ *
+ * @param color New RGB color value
+ */
+void set_current_rgb(const RGB_16 *color);
+
+/**
  * @brief Saves current HSB color into nvm
  */
 void save_current_hsb();

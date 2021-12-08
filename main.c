@@ -70,6 +70,7 @@
 #include "PWM.h"
 #include "modes.h"
 #include "memory.h"
+#include "USB.h"
 
 
 /**
@@ -113,7 +114,6 @@ void on_btn_hold_end()
  */
 void on_btn_double_click()
 {
-    NRF_LOG_DEBUG("Double click");
     stop_led0();
     next_mode();
     set_hsb_delta(get_current_mode_config().hsb_delta);
@@ -134,6 +134,7 @@ void on_btn_double_click()
             break;
     }
 }
+
 /**
  * @brief Sets button events
  */
@@ -142,6 +143,25 @@ void set_button_events()
     set_hold_start_event(on_btn_hold_start);
     set_hold_end_event(on_btn_hold_end);
     set_double_click_event(on_btn_double_click);
+}
+
+void on_rgb_command(void *context)
+{
+    RGB_8 new_rgb =
+    {
+        *((int32_t *)(context)),
+        *((int32_t *)(context + sizeof(int32_t))),
+        *((int32_t *)(context + sizeof(int32_t) * 2))
+    };
+    NRF_LOG_DEBUG("Color set to (%d, %d, %d)", new_rgb.R, new_rgb.G, new_rgb.B);
+    HSB new_hsb;
+    RGB_8_to_HSB(&new_rgb, &new_hsb);
+    set_current_hsb(&new_hsb);
+}
+
+void set_usb_events()
+{
+    set_rgb_com_event(on_rgb_command);
 }
 
 /**
@@ -165,8 +185,16 @@ int main(void)
     /* Start PWM playback */
     start_pwm();
 
+    init_usb();
+    set_usb_events();
+
     while (true)
     {
+        while (app_usbd_event_queue_process())
+        {
+            /* Nothing to do */
+        }
+
         LOG_BACKEND_USB_PROCESS();
         NRF_LOG_PROCESS();
     }

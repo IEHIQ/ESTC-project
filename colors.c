@@ -88,3 +88,62 @@ void word_to_HSB(uint32_t word, HSB *color)
     word >>= 8;
     color->H = (uint16_t)(word & 65535);
 }
+
+void RGB_8_to_HSB(const RGB_8 *rgb, HSB *hsb)
+{
+    float nr = (float)rgb->R / 255.0f;
+    float ng = (float)rgb->G / 255.0f;
+    float nb = (float)rgb->B / 255.0f;
+
+    float cmax = fmax(fmax(nr, ng), nb);
+    float cmin = fmin(fmin(nr, ng), nb);
+    float delta = cmax - cmin;
+
+    float _h = 0.0f;
+    float _s = 0.0f;
+    float _b = 0.0f;
+
+    if (delta == 0.0f)
+    {
+        _h = 0;
+    }
+    else if (cmax == nr)
+    {
+        _h = ((ng - nb) / delta) * 60.0f;
+    }
+    else if (cmax == ng)
+    {
+        _h = ((nb - nr) / delta + 2) * 60.0f;
+    }
+    else if (cmax == nb)
+    {
+        _h = ((nr - ng) / delta + 4) * 60.0f;
+    }
+
+    if (cmax == 0)
+    {
+        _s = 0;
+    }
+    else
+    {
+        _s = delta / cmax;
+    }
+
+    _b = cmax;
+
+    if (_h < 0)
+    {
+        _h +=360;
+    }
+
+    hsb->H = _h;
+    hsb->S = _s * 100;
+    hsb->B = _b * 100;
+}
+
+void RGB_8_to_RGB_16(const RGB_8 *rgb_8, RGB_16 *rgb_16, const uint16_t max_color)
+{
+    rgb_16->R = (uint16_t)((float)rgb_8->R / 255.0f * (float)max_color);
+    rgb_16->G = (uint16_t)((float)rgb_8->G / 255.0f * (float)max_color);
+    rgb_16->B = (uint16_t)((float)rgb_8->B / 255.0f * (float)max_color);
+}

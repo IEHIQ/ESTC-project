@@ -4,8 +4,9 @@
 
 #include "button.h"
 
-/* Defining button timer */
-APP_TIMER_DEF(btn_timer);
+/* Defining button timers */
+APP_TIMER_DEF(click_timer);
+APP_TIMER_DEF(antibounce_timer);
 
 static uint32_t button_pin;
 
@@ -18,8 +19,10 @@ static event on_double_click;
 
 /* Indicates that the next button press will (or will not) be a double click. */
 static bool is_double_click;
+/* Indicates that if contact antibounce delay timer is still running */
+static bool antibounce;
 
-static void button_timer_handler(void *context)
+static void click_timer_handler(void *context)
 {
     NRF_LOG_DEBUG("Handler");
     is_double_click = false;
@@ -28,15 +31,21 @@ static void button_timer_handler(void *context)
         NRF_LOG_DEBUG("Holding!");
         on_hold_start();
     }
-};
+}
+
+static void antibounce_timer_handler(void *context)
+{
+    antibounce = false;
+    NRF_LOG_DEBUG("Antibounce ended");
+}
 
 /**
- * @brief Configures button timer
- *
+ * @brief Configures button timers
  */
-static void init_button_timer()
+static void init_button_timers()
 {
-    app_timer_create(&btn_timer, APP_TIMER_MODE_SINGLE_SHOT, button_timer_handler);
+    app_timer_create(&click_timer, APP_TIMER_MODE_SINGLE_SHOT, click_timer_handler);
+    app_timer_create(&antibounce_timer, APP_TIMER_MODE_SINGLE_SHOT, antibounce_timer_handler);
 }
 
 /*
@@ -44,26 +53,32 @@ static void init_button_timer()
 */
 static void click(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
-    if (!nrf_gpio_pin_read(button_pin))
+    if (!antibounce)
     {
-        NRF_LOG_DEBUG("Pressed!");
-        if (!is_double_click)
+        if (!nrf_gpio_pin_read(button_pin))
         {
-            is_double_click = true;
-            app_timer_start(btn_timer, DOUBLE_CLICK_DELAY_TICKS, NULL);
+            NRF_LOG_DEBUG("Antibounce");
+            antibounce = true;
+            app_timer_start(antibounce_timer, ANTIBOUNCE_DELAY_TICKS, NULL);
+
+            if (!is_double_click)
+            {
+                is_double_click = true;
+                app_timer_start(click_timer, DOUBLE_CLICK_DELAY_TICKS, NULL);
+            }
+            else
+            {
+                NRF_LOG_DEBUG("Double click!");
+                is_double_click = false;
+                on_double_click();
+                app_timer_stop(click_timer);
+            }
         }
         else
         {
-            NRF_LOG_DEBUG("Double click!");
-            is_double_click = false;
-            on_double_click();
-            app_timer_stop(btn_timer);
+            NRF_LOG_DEBUG("Released!");
+            on_hold_end();
         }
-    }
-    else
-    {
-        NRF_LOG_DEBUG("Released!");
-        on_hold_end();
     }
 }
 
@@ -73,9 +88,10 @@ void init_button()
     on_hold_end = empty_event;
     on_double_click = empty_event;
     is_double_click = false;
+    antibounce = false;
 
     nrfx_gpiote_init();
-    init_button_timer();
+    init_button_timers();
     button_pin = NRF_GPIO_PIN_MAP(1, 6);
     nrf_gpio_cfg_input(button_pin, NRF_GPIO_PIN_PULLUP);
 
