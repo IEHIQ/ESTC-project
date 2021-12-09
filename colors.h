@@ -20,6 +20,16 @@ typedef struct
 } NRGB;
 
 /**
+ * @brief Classic 8 bit RGB
+ */
+typedef struct
+{
+    uint8_t R;
+    uint8_t G;
+    uint8_t B;
+} RGB_8;
+
+/**
  * @brief Extended RGB for PWM
  */
 typedef struct
@@ -90,5 +100,22 @@ uint32_t HSB_to_word(const HSB *color);
  * @param color Resulting color
  */
 void word_to_HSB(uint32_t word, HSB *color);
+
+/**
+ * @brief Translates 8 bit RGB to HSB
+ *
+ * @param rgb Initial 8 bit RGB color
+ * @param hsb Resulting HSB color
+ */
+void RGB_8_to_HSB(const RGB_8 *rgb, HSB *hsb);
+
+/**
+ * @brief Translates 8 bit RGB to extended 16 bit RGB with configurable factor (max color value, basically)
+ *
+ * @param rgb_8 Initial 8 bit RGB color
+ * @param rgb_16 Resulting 16 bit RGB color
+ * @param max_color Max resulting color value
+ */
+void RGB_8_to_RGB_16(const RGB_8 *rgb_8, RGB_16 *rgb_16, const uint16_t max_color);
 
 #endif

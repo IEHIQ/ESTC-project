@@ -64,11 +64,8 @@ void init_leds_config()
 void set_current_hsb(const HSB *color)
 {
     current_hsb = *color;
-}
-
-void set_hsb_delta(const HSB new_delta)
-{
-    current_hsb_delta = new_delta;
+    HSB_to_RGB_16(&current_hsb, &current_rgb, MAX_DC);
+    set_pwm_led_1(&current_rgb);
 }
 
 HSB get_current_hsb()
@@ -76,9 +73,20 @@ HSB get_current_hsb()
     return current_hsb;
 }
 
+void set_current_rgb(const RGB_16 *color)
+{
+    current_rgb = *color;
+    set_pwm_led_1(&current_rgb);
+}
+
 RGB_16 get_current_rgb()
 {
     return current_rgb;
+}
+
+void set_hsb_delta(const HSB new_delta)
+{
+    current_hsb_delta = new_delta;
 }
 
 /**

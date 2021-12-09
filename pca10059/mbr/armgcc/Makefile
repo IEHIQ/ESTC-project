@@ -60,6 +60,8 @@ SRC_FILES += \
   $(PROJ_DIR)/LED.c\
   $(PROJ_DIR)/utils.c\
   $(PROJ_DIR)/memory.c\
+  $(PROJ_DIR)/USB.c\
+  $(PROJ_DIR)/commands.c\
   \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_pwm.c \
   $(SDK_ROOT)/components/libraries/timer/app_timer2.c \
