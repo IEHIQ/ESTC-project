@@ -3,52 +3,52 @@
 
 void HSB_to_N_RGB(const HSB *in, NRGB *out)
 {
-    float _h = (float)in->H / 60.0f;
-    float _s = (float)in->S / 100.0f;
-    float _b = (float)in->B / 100.0f;
+    float hue_f = (float)in->H / 60.0f;
+    float sat_f = (float)in->S / 100.0f;
+    float bri_f = (float)in->B / 100.0f;
 
-    float c = _s * _b;
-    float x = c * (1 - fabs(fmod(_h, 2.0f) - 1));
-    float m = _b - c;
+    float c = sat_f * bri_f;
+    float x = c * (1 - fabs(fmod(hue_f, 2.0f) - 1));
+    float m = bri_f - c;
 
-    float _red = 0.0f;
-    float _gre = 0.0f;
-    float _blu = 0.0f;
+    float nr = 0.0f;
+    float ng = 0.0f;
+    float nb = 0.0f;
 
-    if (0.0f <= _h && _h < 1.0f)
+    if (0.0f <= hue_f && hue_f < 1.0f)
     {
-        _red = c;
-        _gre = x;
+        nr = c;
+        ng = x;
     }
-    else if (1.0f <= _h && _h < 2.0f)
+    else if (1.0f <= hue_f && hue_f < 2.0f)
     {
-        _red = x;
-        _gre = c;
+        nr = x;
+        ng = c;
     }
-    else if (2.0f <= _h && _h < 3.0f)
+    else if (2.0f <= hue_f && hue_f < 3.0f)
     {
-        _gre = c;
-        _blu = x;
+        ng = c;
+        nb = x;
     }
-    else if (3.0f <= _h && _h < 4.0f)
+    else if (3.0f <= hue_f && hue_f < 4.0f)
     {
-        _gre = x;
-        _blu = c;
+        ng = x;
+        nb = c;
     }
-    else if (4.0f <= _h && _h < 5.0f)
+    else if (4.0f <= hue_f && hue_f < 5.0f)
     {
-        _red = x;
-        _blu = c;
+        nr = x;
+        nb = c;
     }
-    else if (5.0f <= _h && _h < 6.0f)
+    else if (5.0f <= hue_f && hue_f < 6.0f)
     {
-        _red = c;
-        _blu = x;
+        nr = c;
+        nb = x;
     }
 
-    out->R = _red + m;
-    out->G = _gre + m;
-    out->B = _blu + m;
+    out->R = nr + m;
+    out->G = ng + m;
+    out->B = nb + m;
 }
 
 void HSB_to_RGB_16(const HSB *in, RGB_16 *out, const uint16_t factor)
@@ -99,46 +99,46 @@ void RGB_8_to_HSB(const RGB_8 *rgb, HSB *hsb)
     float cmin = fmin(fmin(nr, ng), nb);
     float delta = cmax - cmin;
 
-    float _h = 0.0f;
-    float _s = 0.0f;
-    float _b = 0.0f;
+    float hue_f = 0.0f;
+    float sat_f = 0.0f;
+    float bri_f = 0.0f;
 
     if (delta == 0.0f)
     {
-        _h = 0;
+        hue_f = 0;
     }
     else if (cmax == nr)
     {
-        _h = ((ng - nb) / delta) * 60.0f;
+        hue_f = ((ng - nb) / delta) * 60.0f;
     }
     else if (cmax == ng)
     {
-        _h = ((nb - nr) / delta + 2) * 60.0f;
+        hue_f = ((nb - nr) / delta + 2) * 60.0f;
     }
     else if (cmax == nb)
     {
-        _h = ((nr - ng) / delta + 4) * 60.0f;
+        hue_f = ((nr - ng) / delta + 4) * 60.0f;
     }
 
     if (cmax == 0)
     {
-        _s = 0;
+        sat_f = 0;
     }
     else
     {
-        _s = delta / cmax;
+        sat_f = delta / cmax;
     }
 
-    _b = cmax;
+    bri_f = cmax;
 
-    if (_h < 0)
+    if (hue_f < 0)
     {
-        _h +=360;
+        hue_f +=360;
     }
 
-    hsb->H = _h;
-    hsb->S = _s * 100;
-    hsb->B = _b * 100;
+    hsb->H = hue_f;
+    hsb->S = sat_f * 100;
+    hsb->B = bri_f * 100;
 }
 
 void RGB_8_to_RGB_16(const RGB_8 *rgb_8, RGB_16 *rgb_16, const uint16_t max_color)

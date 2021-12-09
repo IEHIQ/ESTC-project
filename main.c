@@ -145,25 +145,6 @@ void set_button_events()
     set_double_click_event(on_btn_double_click);
 }
 
-void on_rgb_command(void *context)
-{
-    RGB_8 new_rgb =
-    {
-        *((int32_t *)(context)),
-        *((int32_t *)(context + sizeof(int32_t))),
-        *((int32_t *)(context + sizeof(int32_t) * 2))
-    };
-    NRF_LOG_DEBUG("Color set to (%d, %d, %d)", new_rgb.R, new_rgb.G, new_rgb.B);
-    HSB new_hsb;
-    RGB_8_to_HSB(&new_rgb, &new_hsb);
-    set_current_hsb(&new_hsb);
-}
-
-void set_usb_events()
-{
-    set_rgb_com_event(on_rgb_command);
-}
-
 /**
  * @brief Function for application main entry.
  */
@@ -186,7 +167,6 @@ int main(void)
     start_pwm();
 
     init_usb();
-    set_usb_events();
 
     while (true)
     {

@@ -13,9 +13,9 @@ static uint32_t button_pin;
 static void empty_event() {};
 
 /* Button events */
-static event on_hold_start;
-static event on_hold_end;
-static event on_double_click;
+static btn_evt_t on_hold_start;
+static btn_evt_t on_hold_end;
+static btn_evt_t on_double_click;
 
 /* Indicates that the next button press will (or will not) be a double click. */
 static bool is_double_click;
@@ -102,17 +102,17 @@ void init_button()
     nrfx_gpiote_in_event_enable(button_pin, true);
 }
 
-void set_hold_start_event(event hold_start_event)
+void set_hold_start_event(btn_evt_t hold_start_event)
 {
     on_hold_start = hold_start_event;
 }
 
-void set_hold_end_event(event hold_end_event)
+void set_hold_end_event(btn_evt_t hold_end_event)
 {
     on_hold_end = hold_end_event;
 }
 
-void set_double_click_event(event double_click_event)
+void set_double_click_event(btn_evt_t double_click_event)
 {
     on_double_click = double_click_event;
 }
